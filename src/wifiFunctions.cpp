@@ -76,12 +76,12 @@ void checkReset()
 bool handleBodyPower(AsyncWebServerRequest *request, uint8_t *data, size_t len)
 {
     Serial.printf("[REQUEST POWER]\t%.*s\r\n", len, (const char *)data);
-    if (memcmp(data, "off", 3) == 0 || memcmp(data, "OFF", 3) == 0)
+    if (memcmp(data, "off", 3) == 0 || memcmp(data, "OFF", 3) == 0 || memcmp(data, "0", 1) == 0)
     {
         fan.setPower(false);
         return 1;
     }
-    else if (memcmp(data, "on", 2) == 0 || memcmp(data, "ON", 2) == 0)
+    else if (memcmp(data, "on", 2) == 0 || memcmp(data, "ON", 2) == 0 || memcmp(data, "1", 1) == 0)
     {
         fan.setPower(true);
         return 1;
@@ -187,25 +187,32 @@ void startServer()
     webServer.on("/speed", HTTP_GET, [](AsyncWebServerRequest *request)
                  {
                      char msg[4];
-                     sprintf(msg, "%3d", fan.getSpeed());
+                     sprintf(msg, "%d", fan.getSpeed());
                      request->send(200, "text/plain", msg);
                  });
     webServer.on("/angle", HTTP_GET, [](AsyncWebServerRequest *request)
                  {
                      char msg[4];
-                     sprintf(msg, "%3d", fan.getAngle());
+                     sprintf(msg, "%d", fan.getAngle());
                      request->send(200, "text/plain", msg);
                  });
     webServer.on("/timer", HTTP_GET, [](AsyncWebServerRequest *request)
                  {
-                     char msg[6];
-                     sprintf(msg, "%5d", fan.getTimer());
+                     char msg[10];
+                     sprintf(msg, "%d", fan.getTimer());
                      request->send(200, "text/plain", msg);
                  });
     webServer.on("/rpm", HTTP_GET, [](AsyncWebServerRequest *request)
                  {
-                     char msg[6];
-                     sprintf(msg, "%5d", fan.getRpm());
+                     char msg[10];
+                     sprintf(msg, "%d", fan.getRpm());
+                     request->send(200, "text/plain", msg);
+                 });
+    webServer.on("/status", HTTP_GET, [](AsyncWebServerRequest *request)
+                 {
+                     char msg[100];
+                     sprintf(msg, "power:%d\nsweep:%d\nbreathe:%d\nspeed:%d\nangle:%d\ntimer:%d\nrpm:%d",
+                             fan.getPower(), fan.getSweep(), fan.getBreathe(), fan.getSpeed(), fan.getAngle(), fan.getTimer(), fan.getRpm());
                      request->send(200, "text/plain", msg);
                  });
     webServer.onNotFound([](AsyncWebServerRequest *request)
