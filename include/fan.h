@@ -7,19 +7,25 @@
 #define PWM_OUT_PIN 4
 #define PWM_EN_PIN 5
 #define SERVO_PIN 14
+#define SERVO_TMIN 544
+#define SERVO_TMAX 2400
 #define MIN_ANGLE 0
 #define MAX_ANGLE 180
-#define SERVO_TD 15
+#define MIDDLE_ANGLE (MAX_ANGLE - MIN_ANGLE) / 2
+#define SWEEP_ANGLE 90
+#define SERVO_MVSPEED 15 //higher is slower
 
 class Fan
 {
 private:
     bool on = false;
     bool sweepMode = false;
+    bool sweepDir = false;
     bool breatheMode = false;
     uint8_t speed = 127;
-    int angle = 0;
-    int targetAngle = 0;
+    int angle = MIDDLE_ANGLE;
+    int timer = 0;
+    int targetAngle = MIDDLE_ANGLE;
     int rpm = 0;
     unsigned long count = 0;
     bool lastState = true;
@@ -34,9 +40,11 @@ public:
     void setPower(bool p);
     bool getPower();
     void setSpeed(uint8_t s);
-    double getSpeed();
+    uint8_t getSpeed();
     void setAngle(int a);
     int getAngle();
+    void setTimer(int t);
+    int getTimer();
     void setSweep(bool p);
     bool getSweep();
     void setBreathe(bool p);

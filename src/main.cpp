@@ -14,9 +14,6 @@ void setup()
     delay(100);
     wifiSetup2();
     startServer();
-    // fan.setSpeed(50);
-    // fan.setPower(true);
-    // fan.setAngle(180);
 }
 
 void loop()
