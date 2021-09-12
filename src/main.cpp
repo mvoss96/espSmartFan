@@ -9,6 +9,7 @@ void setup()
     Serial.begin(115200);
     Serial.println("\n\nespSmartFan");
     Serial.print(F("\nStarting up "));
+    randomSeed(millis());
     wifiSetup1();
     checkReset();
     delay(100);

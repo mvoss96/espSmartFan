@@ -22,6 +22,10 @@ private:
     bool sweepMode = false;
     bool sweepDir = false;
     bool breatheMode = false;
+    bool breathePower = false;
+    float bMod = 0.3;
+    int enterBreathePowerChance = 10;
+    int leaveBreathePowerChance = 10;
     uint8_t speed = 127;
     int angle = MIDDLE_ANGLE;
     int timer = 0;

@@ -27,6 +27,11 @@ Fan::Fan()
 void Fan::setPower(bool p)
 {
     on = p;
+    if (!on)
+    {
+        setSweep(false);
+        breathePower = false;
+    }
 }
 
 bool Fan::getPower()
@@ -105,11 +110,18 @@ int Fan::getRpm()
 void Fan::run()
 {
     //write power and speed to pins
-    analogWrite(PWM_OUT_PIN, speed);
     digitalWrite(PWM_EN_PIN, on);
+    if (breatheMode)
+    {
+        analogWrite(PWM_OUT_PIN, (breathePower) ? speed : speed * bMod);
+    }
+    else
+    {
+        analogWrite(PWM_OUT_PIN, speed);
+    }
 
     //move servo towards target
-    long unsigned int servospeed = (sweepMode) ? SERVO_MVSPEED * 5 : SERVO_MVSPEED;
+    long unsigned int servospeed = (sweepMode) ? SERVO_MVSPEED * 4 : SERVO_MVSPEED;
     if (millis() - servoTime > servospeed)
     {
         if (targetAngle > angle)
@@ -149,6 +161,23 @@ void Fan::run()
     unsigned long deltaTime = millis() - startTime;
     if (deltaTime > 1000)
     {
+        if (breatheMode && on)
+        {
+            if (breathePower)
+            {
+                if (random(0, leaveBreathePowerChance + 1) == 0)
+                {
+                    breathePower = false;
+                }
+            }
+            else
+            {
+                if (random(0, enterBreathePowerChance + 1) == 0)
+                {
+                    breathePower = true;
+                }
+            }
+        }
         rpm = count * 60 * (1000.0 / deltaTime) / 2;
         count = 0;
         startTime = millis();
@@ -158,10 +187,11 @@ void Fan::run()
             {
                 Serial.println("Timer zero");
                 setPower(false);
-                setSweep(false);
             }
         }
         Serial.print(rpm);
         Serial.println(" rpm");
+        Serial.print("breathePower:");
+        Serial.println(breathePower);
     }
 }
