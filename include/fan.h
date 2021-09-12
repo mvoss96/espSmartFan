@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "Servo.h"
 
 #define MIN_TIME_MILLIS 15
 #define PWM_IN_PIN 0
@@ -8,6 +9,7 @@
 #define SERVO_PIN 14
 #define MIN_ANGLE 0
 #define MAX_ANGLE 180
+#define SERVO_TD 15
 
 class Fan
 {
@@ -17,11 +19,14 @@ private:
     bool breatheMode = false;
     uint8_t speed = 127;
     int angle = 0;
+    int targetAngle = 0;
     int rpm = 0;
     unsigned long count = 0;
     bool lastState = true;
-    unsigned long start_time;
+    unsigned long startTime;
+    unsigned long servoTime;
     unsigned long lastRead;
+    Servo servo;
     
 
 public:

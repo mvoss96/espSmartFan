@@ -3,7 +3,12 @@
 
 double clamp(double x, double upper, double lower)
 {
-    return std::min(upper, std::max(x, lower));
+    if (x < lower)
+        return lower;
+    else if (x > upper)
+        return upper;
+    else
+        return x;
 }
 
 Fan::Fan()
@@ -12,8 +17,13 @@ Fan::Fan()
     pinMode(PWM_OUT_PIN, OUTPUT);
     pinMode(PWM_EN_PIN, OUTPUT);
     pinMode(SERVO_PIN, OUTPUT);
-    start_time = millis();
+    startTime = millis();
+    servoTime = millis();
     lastRead = millis();
+    servo.attach(SERVO_PIN);
+    int middleAngle = (MAX_ANGLE-MIN_ANGLE)/2;
+    angle = middleAngle;
+    servo.write(middleAngle);
     run();
 }
 
@@ -39,7 +49,7 @@ double Fan::getSpeed()
 
 void Fan::setAngle(int a)
 {
-    angle = clamp(angle, MIN_ANGLE, MAX_ANGLE);
+    targetAngle = clamp(a, MAX_ANGLE, MIN_ANGLE);
 }
 
 int Fan::getAngle()
@@ -77,6 +87,19 @@ void Fan::run()
     analogWrite(PWM_OUT_PIN, speed);
     digitalWrite(PWM_EN_PIN, on);
 
+    if (millis() - servoTime > SERVO_TD)
+    {
+        if (targetAngle > angle)
+        {
+            servo.write(angle++);
+        }
+        else if (targetAngle < angle)
+        {
+            servo.write(angle--);
+        }
+        servoTime = millis();
+    }
+
     if (lastState == HIGH && digitalRead(PWM_IN_PIN) == LOW)
     {
         count++;
@@ -88,13 +111,13 @@ void Fan::run()
         lastState = HIGH;
     }
 
-    unsigned long deltaTime = millis() - start_time;
+    unsigned long deltaTime = millis() - startTime;
     if (deltaTime > 1000)
     {
         rpm = count * 60 * (1000.0 / deltaTime) / 2;
         count = 0;
         Serial.print(rpm);
         Serial.println(" rpm");
-        start_time = millis();
+        startTime = millis();
     }
 }
