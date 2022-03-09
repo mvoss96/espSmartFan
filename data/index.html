@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hexagon Light</title>
+    <link type="text/css" rel="stylesheet" href="style/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+</head>
+
+<body ontouchstart="">
+    <div class="container">
+        <header>
+            <a href="https://git.io/fjiiO" draggable="false">
+                <img class="logo" draggable="false" src="img/logo.svg" alt="Hexagon Logo">
+            </a>
+        </header>
+        <section class="status-container">
+            <div class="status-screen">
+                <button class="powerbutton"><img src="img/power.png" draggable="false" class="off" id="main-logo"
+                        alt=""></button>
+                <p class="rpm" id="rpm-value"></p>
+            </div>
+        </section>
+        <div class="grey-box">
+            <div class="power-container">
+                <p>Power</p>
+                <span id="power-value">?</span>
+            </div>
+            <div class="power-container" id ="sweep-container">
+                <p>Sweep Mode</p>
+                <span id="sweep-value">?</span>
+            </div>
+            <div class="power-container" id ="breathe-container"">
+                <p>Breathe Mode</p>
+                <span id="breathe-value">?</span>
+            </div>
+            <div class="slide-container" id ="angle-container">
+                <label for="angle-range" class="value-label">Angle</label>
+                <div class="value-box" id="angle-value">?</div>
+                <input type="range" min="0" max="180" value="0" class="slider" id="angle-range">
+            </div>
+            <div class="slide-container" id ="timer-container">
+                <label for="timer-range" class="value-label">Timer</label>
+                <div class="value-box" id="timer-value">?</div>
+                <input type="range" min="1" max="36000" value="0" class="slider" id="timer-range">
+            </div>
+            <div class="slide-container" id ="speed-container">
+                <label for="speed-range" class="value-label">Speed</label>
+                <div class="value-box" id="speed-value">?</div>
+                <input type="range" min="1" max="255" value="0" class="slider" id="speed-range">
+            </div>
+        </div>
+        <footer>
+            <ul class="credit-bar">
+                <li><a href="https://git.io/Ju5ZI">espSmartFan by Marcus Voß<br>https://git.io/Ju5ZI</a></li>
+                <li><a href="https://www.flaticon.com" title="Freepik">
+                        icons from flaticon<br></a></li>
+            </ul>
+        </footer>
+    </div>
+    <script>
+        'use strict';
+        let ip_addr = ""
+        let powerStatus = false
+        let sweepStatus = false
+        let breatheStatus = false
+        let timerStatus = 0
+        let timerDragged = false
+        let angleDragged = false
+        let speedDragged = false
+
+        let powerValue = document.getElementById("power-value")
+        let sweepValue = document.getElementById("sweep-value")
+        let breatheValue = document.getElementById("breathe-value")
+        let speedValue = document.getElementById("speed-value")
+        let speedRange = document.getElementById("speed-range")
+        let angleValue = document.getElementById("angle-value")
+        let angleRange = document.getElementById("angle-range")
+        let timerValue = document.getElementById("timer-value")
+        let timerRange = document.getElementById("timer-range")
+        let rpmValue = document.getElementById("rpm-value")
+        let mainLogo = document.getElementById("main-logo")
+        let sweepContainer = document.getElementById("sweep-container")
+        let breatheContainer = document.getElementById("breathe-container")
+        let angleContainer = document.getElementById("angle-container")
+        let timerContainer = document.getElementById("timer-container")
+        let speedContainer = document.getElementById("speed-container")
+        const rePower = /power:\s*(?<power>[0-1]).*\n/i
+        const reSweep = /sweep:\s*(?<sweep>[0-1]).*\n/i
+        const reBreathe = /breathe:.*(?<breathe>[0-1]).*\n/i
+        const reSpeed = /speed:\s*(?<speed>\d*).*/i
+        const reAngle = /targetAngle:\s*(?<angle>\d*).*/i
+        const reTimer = /timer:\s*(?<timer>\d*).*/i
+        const reRpm = /rpm:\s*(?<rpm>\d*).*/i
+        document.addEventListener('DOMContentLoaded', function () {
+            setInterval(() => {
+                update()
+            }, 500);
+
+            speedRange.onchange = speedOnChange
+            speedRange.oninput = speedOnInput
+            angleRange.onchange = angleOnChange
+            angleRange.oninput = angleOnInput
+            timerRange.onchange = timerOnChange
+            timerRange.oninput = timerOnInput
+
+            mainLogo.addEventListener("click", togglePower)
+            powerValue.addEventListener("click", togglePower)
+            sweepValue.addEventListener("click", toggleSweep)
+            breatheValue.addEventListener("click", toggleBreathe)
+            update()
+        }, false);
+
+        function setTimeString() {
+            timerValue.innerHTML = new Date(timerStatus * 1000).toISOString().substr(11, 8)
+        }
+
+        function update() {
+            fetch(ip_addr + "/status").then(function (response) {
+                response.text().then(function (text) {
+                    console.log("received status:\n" + text + "")
+                    //parse power
+                    let newPower = text.match(rePower).groups.power
+                    if (newPower !== undefined) {
+                        powerValue.innerHTML = newPower == true ? "ON" : "OFF"
+                        mainLogo.classList = newPower == true ? "on" : "off"
+                        powerStatus = newPower;
+                        if (powerStatus == false){
+                            sweepContainer.classList.add("disabled")
+                            breatheContainer.classList.add("disabled")
+                            angleContainer.classList.add("disabled")
+                            timerContainer.classList.add("disabled")
+                            speedContainer.classList.add("disabled")
+                        }
+                        else{
+                            sweepContainer.classList.remove("disabled")
+                            breatheContainer.classList.remove("disabled")
+                            angleContainer.classList.remove("disabled")
+                            timerContainer.classList.remove("disabled")
+                            speedContainer.classList.remove("disabled")
+                        }
+                    }
+                    //parse sweep
+                    let newSweep = text.match(reSweep).groups.sweep
+                    if (newSweep !== undefined) {
+                        sweepValue.innerHTML = newSweep == true ? "ON" : "OFF"
+                        sweepStatus = newSweep;
+                        if (sweepStatus == true){
+                            angleContainer.classList.add("disabled")
+                        }
+                    }
+                    //parse breathe
+                    let newBreathe = text.match(reBreathe).groups.breathe
+                    if (newBreathe !== undefined) {
+                        breatheValue.innerHTML = newBreathe == true ? "ON" : "OFF"
+                        breatheStatus = newBreathe;
+                    }
+                    //parse speed
+                    let newSpeed = text.match(reSpeed).groups.speed
+                    //console.log("newSpeed:" + newSpeed)
+                    if (newSpeed !== undefined) {
+                        if (!speedDragged) {
+                            speedValue.innerHTML = newSpeed;
+                            speedRange.value = parseInt(newSpeed);
+                        }
+                    }
+                    //parse angle
+                    let newAngle = text.match(reAngle).groups.angle
+                    //console.log("newAngle:" + newAngle)
+                    if (newAngle !== undefined) {
+                        if (!angleDragged) {
+                            angleValue.innerHTML = newAngle;
+                            angleRange.value = parseInt(newAngle);
+                        }
+                    }
+                    //parse timer
+                    let newTimer = text.match(reTimer).groups.timer
+                    //console.log("newTimer:" + newTimer)
+                    if (newTimer !== undefined) {
+                        if (!timerDragged) {
+                            timerStatus = newTimer;
+                            timerRange.value = parseInt(newTimer);
+                            setTimeString(newTimer);
+                        }
+                    }
+                    //parse rpm
+                    let newRPM = text.match(reRpm).groups.rpm
+                    console.log("newRPM:" + newRPM)
+                    if (newRPM !== undefined) {
+                        rpmValue.innerHTML = newRPM + " rpm";
+                    }
+
+                })
+            })
+        }
+
+        function togglePower() {
+            fetch(ip_addr + "/power", {
+                method: "POST",
+                body: (powerStatus == true) ? "OFF" : "ON",
+                headers: {
+                    "Content-type": "text/plain"
+                }
+            })
+            update()
+        }
+
+        function toggleSweep() {
+            fetch(ip_addr + "/sweepMode", {
+                method: "POST",
+                body: (sweepStatus == true) ? "OFF" : "ON",
+                headers: {
+                    "Content-type": "text/plain"
+                }
+            })
+            update()
+        }
+
+        function toggleBreathe() {
+            fetch(ip_addr + "/breatheMode", {
+                method: "POST",
+                body: (breatheStatus == true) ? "OFF" : "ON",
+                headers: {
+                    "Content-type": "text/plain"
+                }
+            })
+            update()
+        }
+
+
+        function speedOnChange() {
+            fetch(ip_addr + "/speed", {
+                method: "POST",
+                body: this.value,
+                headers: {
+                    "Content-type": "text/plain"
+                }
+            })
+            speedDragged = false
+            update();
+        }
+
+        function speedOnInput() {
+            speedValue.innerHTML = this.value;
+            speedDragged = true
+        }
+
+        function angleOnChange() {
+            fetch(ip_addr + "/angle", {
+                method: "POST",
+                body: this.value,
+                headers: {
+                    "Content-type": "text/plain"
+                }
+            })
+            angleDragged = false
+            update();
+        }
+
+        function angleOnInput() {
+            angleValue.innerHTML = this.value;
+            angleDragged = true
+        }
+
+        function timerOnChange() {
+            fetch(ip_addr + "/timer", {
+                method: "POST",
+                body: timerStatus,
+                headers: {
+                    "Content-type": "text/plain"
+                }
+            })
+            timerDragged = false
+            update();
+        }
+
+        function timerOnInput() {
+            timerStatus = this.value
+            setTimeString();
+            timerDragged = true
+        }
+    </script>
+</body>
+
+</html>

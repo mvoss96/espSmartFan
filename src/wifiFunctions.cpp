@@ -5,7 +5,6 @@
 #include <DNSServer.h>
 #include <ESP_DoubleResetDetector.h>
 #include <AsyncElegantOTA.h>
-#include <LittleFS.h>
 
 DoubleResetDetector drd(DRD_TIMEOUT, DRD_ADDRESS);
 AsyncWebServer webServer(80);
@@ -176,8 +175,7 @@ bool handleBodyTimer(AsyncWebServerRequest *request, uint8_t *data, size_t len)
 
 void startServer()
 {
-    webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-                 { request->redirect("/update"); });
+    webServer.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
     webServer.on("/power", HTTP_GET, [](AsyncWebServerRequest *request)
                  { request->send(200, "text/plain", (fan.getPower()) ? "on" : "off"); });
     webServer.on("/sweepMode", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -211,8 +209,8 @@ void startServer()
     webServer.on("/status", HTTP_GET, [](AsyncWebServerRequest *request)
                  {
                      char msg[100];
-                     sprintf(msg, "power:%d\nsweep:%d\nbreathe:%d\nspeed:%d\nangle:%d\ntimer:%d\nrpm:%d",
-                             fan.getPower(), fan.getSweep(), fan.getBreathe(), fan.getSpeed(), fan.getAngle(), fan.getTimer(), fan.getRpm());
+                     sprintf(msg, "power:%d\nsweep:%d\nbreathe:%d\nspeed:%d\nangle:%d\ntargetAngle:%d\ntimer:%d\nrpm:%d",
+                             fan.getPower(), fan.getSweep(), fan.getBreathe(), fan.getSpeed(), fan.getAngle(), fan.getTargetAngle(), fan.getTimer(), fan.getRpm());
                      request->send(200, "text/plain", msg);
                  });
     webServer.onNotFound([](AsyncWebServerRequest *request)
@@ -258,6 +256,7 @@ void startServer()
                                 }
                             });
     AsyncElegantOTA.begin(&webServer); // Start ElegantOTA
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
     webServer.begin();
     Serial.println("OTA-server started");
 }

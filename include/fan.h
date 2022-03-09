@@ -47,6 +47,7 @@ public:
     uint8_t getSpeed();
     void setAngle(int a);
     int getAngle();
+    int getTargetAngle();
     void setTimer(int t);
     int getTimer();
     void setSweep(bool p);

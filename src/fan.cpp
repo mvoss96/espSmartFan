@@ -29,8 +29,10 @@ void Fan::setPower(bool p)
     on = p;
     if (!on)
     {
-        setSweep(false);
+        sweepMode = false;
+        targetAngle = angle;
         breathePower = false;
+        timer = 0;
     }
 }
 
@@ -60,11 +62,16 @@ int Fan::getAngle()
     return angle;
 }
 
+int Fan::getTargetAngle()
+{
+    return targetAngle;
+}
+
 void Fan::setTimer(int t)
 {
     if (on)
     {
-        timer = clamp(t, 60 * 60 * 12, 10);
+        timer = clamp(t, 60 * 60 * 12, 1);
     }
 }
 
@@ -75,15 +82,18 @@ int Fan::getTimer()
 
 void Fan::setSweep(bool p)
 {
-    sweepMode = p;
-    if (sweepMode)
+    if (on)
     {
-        sweepDir = false;
-        targetAngle = MIDDLE_ANGLE - SWEEP_ANGLE / 2;
-    }
-    else
-    {
-        targetAngle = angle;
+        sweepMode = p;
+        if (sweepMode)
+        {
+            sweepDir = false;
+            targetAngle = MIDDLE_ANGLE - SWEEP_ANGLE / 2;
+        }
+        else
+        {
+            targetAngle = angle;
+        }
     }
 }
 
@@ -94,7 +104,7 @@ bool Fan::getSweep()
 
 void Fan::setBreathe(bool p)
 {
-    breatheMode = true;
+    breatheMode = p;
 }
 
 bool Fan::getBreathe()
